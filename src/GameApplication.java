@@ -1,8 +1,10 @@
 import javafx.application.Application;
+import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Circle;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
 
@@ -44,6 +46,26 @@ public class GameApplication extends Application {
             }
         });
 
+        // Create ball
+        Circle ball = new Circle();
+
+        // Set radius (size)
+        ball.setRadius(8);
+
+        // Set position (center of screen)
+        ball.setCenterX(300);
+        ball.setCenterY(200);
+
+        // Set Color
+        ball.setFill(Color.RED);
+
+        // Add ball to screen
+        root.getChildren().add(ball);
+
+        // Ball movement speed
+        final double[] dx = {2}; // Horizontal speed
+        final double[] dy = {2}; // vertical speed
+
         // Set window title
         stage.setTitle("Brick Breaker Game");
 
@@ -52,6 +74,41 @@ public class GameApplication extends Application {
 
         // Show the window
         stage.show();
+
+        AnimationTimer timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+
+                // Move the ball
+                ball.setCenterX(ball.getCenterX() + dx[0]);
+                ball.setCenterY(ball.getCenterY() + dy[0]);
+
+                // Bounce of Left and Right walls
+                if (ball.getCenterX() <= 0 || ball.getCenterX() >= 600){
+                    dx[0] = -dx[0];
+                }
+
+                // Bounce off top wall
+                if(ball.getCenterY() < 0){
+                    dy[0] = -dy[0];
+                }
+
+                // Check collision with paddle
+                if (ball.getBoundsInParent().intersects(paddle.getBoundsInParent())){
+                    dy[0] = -dy[0];     // Reverse vertical direction
+                }
+
+                // Check if ball goes below screen (Game Over)
+                if (ball.getCenterY() >= 400) {
+                    System.out.println("Game Over");
+
+                    stop();     // stop the animation
+                }
+            }
+        };
+
+        // Start animation
+        timer.start();
     }
 
     public static void main(String[] args) {
