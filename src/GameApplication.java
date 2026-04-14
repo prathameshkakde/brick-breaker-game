@@ -45,10 +45,14 @@ public class GameApplication extends Application {
 
         // Add keyboard controls
         scene.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.LEFT){
-                paddle.setX(paddle.getX() - 20); // move Left
-            } else if (event.getCode() == KeyCode.RIGHT){
-                paddle.setX(paddle.getX() + 20); // move Right
+            if (event.getCode() == KeyCode.LEFT) {
+                if (paddle.getX() > 0) {
+                    paddle.setX(paddle.getX() - 20);
+                }
+            } else if (event.getCode() == KeyCode.RIGHT) {
+                if (paddle.getX() < 600 - paddle.getWidth()) {
+                    paddle.setX(paddle.getX() + 20);
+                }
             }
         });
 
@@ -67,6 +71,20 @@ public class GameApplication extends Application {
 
         // Add ball to screen
         root.getChildren().add(ball);
+
+        // Game over text
+        Text gameOverText = new Text(200, 200, "GAME OVER");
+        gameOverText.setStyle("-fx-font-size: 30px; -fx-fill: red;");
+        gameOverText.setVisible(false);     // hidden initially
+
+        root.getChildren().add(gameOverText);
+
+        // You win text
+        Text winText = new Text(200, 200, "YOU WIN!!!");
+        winText.setStyle("-fx-font-size: 30px; -fx-fill: green;");
+        winText.setVisible(false);     // hidden initially
+
+        root.getChildren().add(winText);
 
         // Create score display
         Text scoreText = new Text(10, 20, "Score: 0");
@@ -129,13 +147,26 @@ public class GameApplication extends Application {
 
                 // Check collision with paddle
                 if (ball.getBoundsInParent().intersects(paddle.getBoundsInParent())){
-                    dy[0] = -dy[0];     // Reverse vertical direction
+
+                    // Calculate hit position
+                    double paddleCenter = paddle.getX() + paddle.getWidth() / 2;
+                    double ballPosition = ball.getCenterX();
+
+                    double offset = ballPosition - paddleCenter;
+
+                    // Normalize offset (-1 to 1 range)
+                    double normalized = offset / (paddle.getWidth() / 2);
+
+                    // Set fixed speed
+                    double speed = 3;
+
+                    dx[0] = normalized * speed;     // horizontal direction
+                    dy[0] = -Math.abs(speed);       // always go upward
                 }
 
                 // Check if ball goes below screen (Game Over)
                 if (ball.getCenterY() >= 400) {
-                    System.out.println("Game Over");
-
+                    gameOverText.setVisible(true);
                     stop();     // stop the animation
                 }
 
@@ -157,7 +188,7 @@ public class GameApplication extends Application {
 
                 // Check win condition
                 if (bricks.isEmpty()) {
-                    System.out.println("You Win!");
+                    winText.setVisible(true);
                     stop();     // stop the game
                 }
             }
