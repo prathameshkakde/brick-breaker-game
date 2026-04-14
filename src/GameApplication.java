@@ -6,12 +6,18 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Circle;
 import javafx.scene.input.KeyCode;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GameApplication extends Application {
 
     @Override
     public void start(Stage stage) {
+
+        final int[] score = {0};
+
         // Create a simple empty Layout
         Pane root = new Pane();
 
@@ -62,6 +68,34 @@ public class GameApplication extends Application {
         // Add ball to screen
         root.getChildren().add(ball);
 
+        // Create score display
+        Text scoreText = new Text(10, 20, "Score: 0");
+        scoreText.setStyle("-fx-font-size: 18px;");
+
+        root.getChildren().add(scoreText);
+
+        List<Rectangle> bricks = new ArrayList<>();
+
+        // Create multiple bricks
+        for (int row = 0; row < 3; row++){
+            for (int col = 0; col < 5; col++){
+
+                Rectangle brick = new Rectangle();
+
+                brick.setWidth(60);
+                brick.setHeight(20);
+
+                brick.setX(60 + col * 100);
+                brick.setY(50 + row * 40);
+
+                brick.setFill(Color.GREEN);
+
+                root.getChildren().add(brick);
+
+                bricks.add(brick);      // store in list
+            }
+        }
+
         // Ball movement speed
         final double[] dx = {2}; // Horizontal speed
         final double[] dy = {2}; // vertical speed
@@ -103,6 +137,28 @@ public class GameApplication extends Application {
                     System.out.println("Game Over");
 
                     stop();     // stop the animation
+                }
+
+               // Check collision with bricks
+                for (Rectangle brick : bricks) {
+                    if (ball.getBoundsInParent().intersects(brick.getBoundsInParent())) {
+
+                        dy[0] = -dy[0];     // bounce
+
+                        root.getChildren().remove(brick);       // remove from screen
+                        bricks.remove(brick);       // remove from list
+
+                        score[0] += 10;     // increase score
+                        scoreText.setText("Score: " + score[0]);    // update display
+
+                        break;      // stop checking further
+                    }
+                }
+
+                // Check win condition
+                if (bricks.isEmpty()) {
+                    System.out.println("You Win!");
+                    stop();     // stop the game
                 }
             }
         };
