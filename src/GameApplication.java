@@ -1,13 +1,16 @@
 import javafx.application.Application;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Circle;
 import javafx.scene.input.KeyCode;
 import javafx.scene.text.Text;
+import javafx.scene.control.Button;
+import javafx.geometry.Pos;
 import javafx.stage.Stage;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,185 +20,206 @@ public class GameApplication extends Application {
     public void start(Stage stage) {
 
         final int[] score = {0};
+        final double[] dx = {2};
+        final double[] dy = {2};
+        final boolean[] isPaused = {false};
 
-        // Create a simple empty Layout
-        Pane root = new Pane();
+        BorderPane root = new BorderPane();
 
-        root.setFocusTraversable(true);
+        // ===== TOP UI =====
+        VBox uiPane = new VBox(5);
+        uiPane.setAlignment(Pos.CENTER);
+        uiPane.setPrefHeight(60);
+        uiPane.setStyle("-fx-background-color: #f0eeeb;");
 
-        // Create paddle (rectangle)
-        Rectangle paddle = new Rectangle();
+        Text scoreText = new Text("Score: 0");
+        scoreText.setVisible(false);
 
-        // Set side of paddle
-        paddle.setWidth(100);
-        paddle.setHeight(10);
+        Text statusText = new Text("");
 
-        // Position paddle (center bottom)
-        paddle.setX(250); //Horizontal position
-        paddle.setY(350); // vertical position
+        HBox buttons = new HBox(10);
+        buttons.setAlignment(Pos.CENTER);
 
-        // Set paddle color
-        paddle.setFill(Color.BLUE);
+        Button restartButton = new Button("RESTART");
+        Button exitButton = new Button("EXIT");
 
-        // Add paddle to the screen
-        root.getChildren().add(paddle);
+        restartButton.setVisible(false);
+        exitButton.setVisible(false);
 
-        // Create a scene with width 600 and height 400
+        buttons.getChildren().addAll(restartButton, exitButton);
+        uiPane.getChildren().addAll(scoreText, statusText, buttons);
+
+        // ===== GAME AREA =====
+        Pane gamePane = new Pane();
+        gamePane.setPrefSize(600, 350);
+        gamePane.setMaxSize(600, 350);
+        gamePane.setMinSize(600, 350);
+        gamePane.setStyle("-fx-background-color: #ebdfce; -fx-border-color: #204b65; -fx-border-width: 3px; -fx-padding: 10px;");
+
+        StackPane wrapper = new StackPane(gamePane);
+        root.setTop(uiPane);
+        root.setCenter(wrapper);
+
         Scene scene = new Scene(root, 600, 400);
+        stage.setScene(scene);
+        stage.setTitle("Brick Breaker Game");
+        stage.show();
 
-        // Add keyboard controls
-        scene.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.LEFT) {
-                if (paddle.getX() > 0) {
-                    paddle.setX(paddle.getX() - 20);
-                }
-            } else if (event.getCode() == KeyCode.RIGHT) {
-                if (paddle.getX() < 600 - paddle.getWidth()) {
-                    paddle.setX(paddle.getX() + 20);
-                }
-            }
-        });
+        gamePane.requestFocus();
 
-        // Create ball
-        Circle ball = new Circle();
+        // ===== START MENU (CENTERED FIX) =====
+        VBox startMenu = new VBox(10);
+        startMenu.setAlignment(Pos.CENTER);
 
-        // Set radius (size)
-        ball.setRadius(8);
+        Button playButton = new Button("PLAY");
 
-        // Set position (center of screen)
+        Text instructions = new Text(
+                "\n← → Move\nP Pause\nBreak all bricks!"
+        );
+
+        startMenu.getChildren().addAll(playButton, instructions);
+
+        // ⭐ THIS IS THE FIX
+        StackPane startWrapper = new StackPane(startMenu);
+        startWrapper.setPrefSize(600, 350);
+
+        gamePane.getChildren().add(startWrapper);
+
+        // ===== GAME OBJECTS =====
+        Rectangle paddle = new Rectangle(100, 10, Color.web("#204b65"));
+        paddle.setX(250);
+        paddle.setY(320);
+        paddle.setVisible(false);
+
+        Circle ball = new Circle(8, Color.web("#010c15"));
         ball.setCenterX(300);
-        ball.setCenterY(200);
+        ball.setCenterY(150);
+        ball.setVisible(false);
 
-        // Set Color
-        ball.setFill(Color.RED);
-
-        // Add ball to screen
-        root.getChildren().add(ball);
-
-        // Game over text
-        Text gameOverText = new Text(200, 200, "GAME OVER");
-        gameOverText.setStyle("-fx-font-size: 30px; -fx-fill: red;");
-        gameOverText.setVisible(false);     // hidden initially
-
-        root.getChildren().add(gameOverText);
-
-        // You win text
-        Text winText = new Text(200, 200, "YOU WIN!!!");
-        winText.setStyle("-fx-font-size: 30px; -fx-fill: green;");
-        winText.setVisible(false);     // hidden initially
-
-        root.getChildren().add(winText);
-
-        // Create score display
-        Text scoreText = new Text(10, 20, "Score: 0");
-        scoreText.setStyle("-fx-font-size: 18px;");
-
-        root.getChildren().add(scoreText);
+        gamePane.getChildren().addAll(paddle, ball);
 
         List<Rectangle> bricks = new ArrayList<>();
-
-        // Create multiple bricks
-        for (int row = 0; row < 3; row++){
-            for (int col = 0; col < 5; col++){
-
-                Rectangle brick = new Rectangle();
-
-                brick.setWidth(60);
-                brick.setHeight(20);
-
-                brick.setX(60 + col * 100);
-                brick.setY(50 + row * 40);
-
-                brick.setFill(Color.GREEN);
-
-                root.getChildren().add(brick);
-
-                bricks.add(brick);      // store in list
+        for (int r = 0; r < 3; r++) {
+            for (int c = 0; c < 5; c++) {
+                Rectangle brick = new Rectangle(60, 20, Color.web("#006898"));
+                brick.setX(60 + c * 100);
+                brick.setY(20 + r * 40);
+                brick.setVisible(false);
+                gamePane.getChildren().add(brick);
+                bricks.add(brick);
             }
         }
 
-        // Ball movement speed
-        final double[] dx = {2}; // Horizontal speed
-        final double[] dy = {2}; // vertical speed
+        // ===== CONTROLS =====
+        scene.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.P) isPaused[0] = !isPaused[0];
 
-        // Set window title
-        stage.setTitle("Brick Breaker Game");
+            if (!isPaused[0] && e.getCode() == KeyCode.LEFT && paddle.getX() > 10)
+                paddle.setX(paddle.getX() - 20);
 
-        // Set the scene to stage (window)
-        stage.setScene(scene);
+            if (!isPaused[0] && e.getCode() == KeyCode.RIGHT &&
+                    paddle.getX() < gamePane.getWidth() - paddle.getWidth() - 10)
+                paddle.setX(paddle.getX() + 20);
+        });
 
-        // Show the window
-        stage.show();
-
+        // ===== GAME LOOP =====
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
 
-                // Move the ball
+                if (isPaused[0]) return;
+
                 ball.setCenterX(ball.getCenterX() + dx[0]);
                 ball.setCenterY(ball.getCenterY() + dy[0]);
 
-                // Bounce of Left and Right walls
-                if (ball.getCenterX() <= 0 || ball.getCenterX() >= 600){
-                    dx[0] = -dx[0];
-                }
+                if (ball.getCenterX() <= 10 || ball.getCenterX() >= gamePane.getWidth() - 10)
+                    dx[0] *= -1;
 
-                // Bounce off top wall
-                if(ball.getCenterY() < 0){
-                    dy[0] = -dy[0];
-                }
+                if (ball.getCenterY() <= 10)
+                    dy[0] *= -1;
 
-                // Check collision with paddle
-                if (ball.getBoundsInParent().intersects(paddle.getBoundsInParent())){
-
-                    // Calculate hit position
-                    double paddleCenter = paddle.getX() + paddle.getWidth() / 2;
-                    double ballPosition = ball.getCenterX();
-
-                    double offset = ballPosition - paddleCenter;
-
-                    // Normalize offset (-1 to 1 range)
-                    double normalized = offset / (paddle.getWidth() / 2);
-
-                    // Set fixed speed
+                if (ball.getBoundsInParent().intersects(paddle.getBoundsInParent())) {
+                    double center = paddle.getX() + paddle.getWidth() / 2;
+                    double offset = (ball.getCenterX() - center) / (paddle.getWidth() / 2);
                     double speed = 3;
-
-                    dx[0] = normalized * speed;     // horizontal direction
-                    dy[0] = -Math.abs(speed);       // always go upward
+                    dx[0] = offset * speed;
+                    dy[0] = -Math.abs(speed);
                 }
 
-                // Check if ball goes below screen (Game Over)
-                if (ball.getCenterY() >= 400) {
-                    gameOverText.setVisible(true);
-                    stop();     // stop the animation
+                if (ball.getCenterY() >= gamePane.getHeight() - 10) {
+                    stop();
+                    statusText.setText("GAME OVER");
+                    restartButton.setVisible(true);
+                    exitButton.setVisible(true);
                 }
 
-               // Check collision with bricks
-                for (Rectangle brick : bricks) {
+                for (Rectangle brick : new ArrayList<>(bricks)) {
                     if (ball.getBoundsInParent().intersects(brick.getBoundsInParent())) {
-
-                        dy[0] = -dy[0];     // bounce
-
-                        root.getChildren().remove(brick);       // remove from screen
-                        bricks.remove(brick);       // remove from list
-
-                        score[0] += 10;     // increase score
-                        scoreText.setText("Score: " + score[0]);    // update display
-
-                        break;      // stop checking further
+                        dy[0] *= -1;
+                        gamePane.getChildren().remove(brick);
+                        bricks.remove(brick);
+                        score[0]++;
+                        scoreText.setText("Score: " + score[0]);
+                        break;
                     }
                 }
 
-                // Check win condition
                 if (bricks.isEmpty()) {
-                    winText.setVisible(true);
-                    stop();     // stop the game
+                    stop();
+                    statusText.setText("YOU WIN!");
+                    restartButton.setVisible(true);
+                    exitButton.setVisible(true);
                 }
             }
         };
 
-        // Start animation
-        timer.start();
+        // ===== PLAY =====
+        playButton.setOnAction(e -> {
+            startWrapper.setVisible(false);
+
+            paddle.setVisible(true);
+            ball.setVisible(true);
+            scoreText.setVisible(true);
+
+            for (Rectangle b : bricks) b.setVisible(true);
+
+            gamePane.requestFocus();
+            timer.start();
+        });
+
+        // ===== RESTART =====
+        restartButton.setOnAction(e -> {
+
+            ball.setCenterX(300);
+            ball.setCenterY(150);
+            dx[0] = 2;
+            dy[0] = 2;
+
+            score[0] = 0;
+            scoreText.setText("Score: 0");
+            statusText.setText("");
+
+            restartButton.setVisible(false);
+            exitButton.setVisible(false);
+
+            for (Rectangle b : bricks) gamePane.getChildren().remove(b);
+            bricks.clear();
+
+            for (int r = 0; r < 3; r++) {
+                for (int c = 0; c < 5; c++) {
+                    Rectangle brick = new Rectangle(60, 20, Color.web("#006898"));
+                    brick.setX(60 + c * 100);
+                    brick.setY(20 + r * 40);
+                    gamePane.getChildren().add(brick);
+                    bricks.add(brick);
+                }
+            }
+
+            gamePane.requestFocus();
+            timer.start();
+        });
+
+        exitButton.setOnAction(e -> System.exit(0));
     }
 
     public static void main(String[] args) {
